@@ -23,7 +23,7 @@ app.listen(port, () => {
 const backendConnect = async () => {
   try {
     await client.connect();
-    db = client.db("PulseDB");
+    db = client.db("Pulse");
     console.log("Conectado a la base de datos de Pulse");
   } catch (e) {
     console.error(e);
