@@ -14,10 +14,6 @@ const client = new MongoClient(uri, {
   }
 });
 let db;
-app.get('/', (req, res) => {
-  res.send('Hello World!');
-});
-
 
 app.listen(port, () => {
   console.log(`Backend levantado en http://localhost:${port}`);
@@ -33,3 +29,9 @@ const backendConnect = async () => {
     console.error(e);
   }
 }
+
+//imports 
+const usersRoutes = require('./routes/users.routes');
+
+//endpoint groups
+app.use('/users', usersRoutes);
