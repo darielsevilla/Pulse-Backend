@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
-
+mongoose.connect(process.env.MONGO_URI_DB, {
+  dbName: 'Pulse',        
+});
 const UserSchema = new mongoose.Schema({
     nombre: {
         type: String,
@@ -23,10 +25,11 @@ const UserSchema = new mongoose.Schema({
         type: Number,
         min: [0, 'La edad no puede ser negativa.'],
     }
+    
 }, {
-    timestamps: true
+    timestamps: false
 });
 
-const User = mongoose.model('User', UserSchema);
+const User = mongoose.model('Users', UserSchema, 'Users');
 
 module.exports = User;

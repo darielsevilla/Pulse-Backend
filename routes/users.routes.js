@@ -6,19 +6,21 @@ const {
     getUsers,
     getUserById,
     updateUser,
-    deleteUser 
+    deleteUserAccount,
+    login,
+    logout,
+    passwordRecovery,
 } = require('../controllers/users.controller');
 
-router.route('/')
-    .get(getUsers)
-    .post(createUser); 
+router.route('/').get(getUsers)
+     
 
-
-router.route('/:id')
-    .get(getUserById)
-    .put(updateUser)
-    .delete(deleteUser);
-
+router.post("/createUser", createUser);
+router.put("/updateUser",  updateUser);
+router.post("/login", login);
+router.post("/logout", logout);
+router.route('/:id').get(getUserById).delete(deleteUserAccount);
+router.post("/recoverPassword", passwordRecovery);
 router.get('/test', template);
 
 module.exports = router;
