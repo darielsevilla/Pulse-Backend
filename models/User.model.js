@@ -18,6 +18,11 @@ const UserSchema = new mongoose.Schema({
         trim: true,
         lowercase: true
     },
+    tipoUsuario: {
+    type: String,
+    enum: ['FAMILIAR', 'ADULTO_MAYOR'],
+    required: [true, 'El tipo de usuario es obligatorio.']
+    },
     num_telefono: {
         type: String,
     },
