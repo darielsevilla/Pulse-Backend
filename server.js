@@ -20,6 +20,8 @@ app.listen(port, () => {
 
 //imports 
 const usersRoutes = require('./routes/users.routes');
+const medsRoutes = require("./routes/meds.routes");
 
 //endpoint groups
 app.use('/users', usersRoutes);
+app.use('/meds', medsRoutes);
