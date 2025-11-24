@@ -20,3 +20,13 @@ app.listen(port, () => {
   console.log(`Backend levantado en http://localhost:${port}`);
   databaseConnect();
 });
+
+
+
+//imports 
+const usersRoutes = require('./routes/users.routes');
+const medsRoutes = require("./routes/meds.routes");
+
+//endpoint groups
+app.use('/users', usersRoutes);
+app.use('/meds', medsRoutes);
