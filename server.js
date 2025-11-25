@@ -19,7 +19,9 @@ app.listen(port, () => {
 //imports 
 const usersRoutes = require('./routes/users.routes');
 const medsRoutes = require("./routes/meds.routes");
+const chatbotRoutes = require("./routes/chatbot.routes");
 
 //endpoint groups
 app.use('/users', usersRoutes);
 app.use('/meds', medsRoutes);
+app.use("/chatbot", chatbotRoutes);
