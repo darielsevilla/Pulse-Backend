@@ -16,8 +16,6 @@ app.listen(port, () => {
   databaseConnect();
 });
 
-
-
 //imports 
 const usersRoutes = require('./routes/users.routes');
 const medsRoutes = require("./routes/meds.routes");
