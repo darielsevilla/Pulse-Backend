@@ -11,11 +11,6 @@ app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
 
-// Imports
-const usersRoutes = require('./routes/users.routes');
-
-app.use('/users', usersRoutes);
-
 app.listen(port, () => {
   console.log(`Backend levantado en http://localhost:${port}`);
   databaseConnect();
@@ -26,7 +21,9 @@ app.listen(port, () => {
 //imports 
 const usersRoutes = require('./routes/users.routes');
 const medsRoutes = require("./routes/meds.routes");
+const chatbotRoutes = require("./routes/chatbot.routes");
 
 //endpoint groups
 app.use('/users', usersRoutes);
 app.use('/meds', medsRoutes);
+app.use("/chatbot", chatbotRoutes);
