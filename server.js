@@ -11,17 +11,10 @@ app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
 
-// Imports
-const usersRoutes = require('./routes/users.routes');
-
-app.use('/users', usersRoutes);
-
 app.listen(port, () => {
   console.log(`Backend levantado en http://localhost:${port}`);
   databaseConnect();
 });
-
-
 
 //imports 
 const usersRoutes = require('./routes/users.routes');
