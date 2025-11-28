@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Alert = require("../models/Alert.model");
 const User = require("../models/User.model");
 const { ObjectId } = require('mongodb'); 
@@ -95,9 +96,15 @@ const receiveMedicationAlert = async (req, res) => {
 const getPendingAlerts = async (req, res) => {
     try {
         const { idFamiliar } = req.params;
-        const alerts = await Alert.find({ familiarId: new ObjectId(idFamiliar), estado: 'PENDIENTE' })
-            .populate('adultoMayorId', 'nombre apellido num_telefono')
-            .sort({ fechaHora: -1 });
+        const familiarObjectId = new mongoose.Types.ObjectId(idFamiliar); 
+
+        const alerts = await Alert.find({ 
+            familiarId: familiarObjectId,
+            estado: 'PENDIENTE' 
+        })
+        .populate('adultoMayorId', 'nombre apellido num_telefono')
+        .sort({ fechaHora: -1 });
+
         res.status(200).json(alerts);
     } catch (error) {
         console.error(error);
