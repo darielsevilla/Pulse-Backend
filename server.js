@@ -20,8 +20,10 @@ app.listen(port, () => {
 const usersRoutes = require('./routes/users.routes');
 const medsRoutes = require("./routes/meds.routes");
 const chatbotRoutes = require("./routes/chatbot.routes");
+const alertsRoutes = require("./routes/alerts.routes");
 
 //endpoint groups
 app.use('/users', usersRoutes);
 app.use('/meds', medsRoutes);
 app.use("/chatbot", chatbotRoutes);
+app.use('/alerts', alertsRoutes);
