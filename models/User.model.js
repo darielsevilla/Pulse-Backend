@@ -29,8 +29,11 @@ const UserSchema = new mongoose.Schema({
     edad: {
         type: Number,
         min: [0, 'La edad no puede ser negativa.'],
-    }
-    
+    },
+    encargados: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Users'
+    }]
 }, {
     timestamps: false
 });
