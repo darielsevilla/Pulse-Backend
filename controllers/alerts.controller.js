@@ -12,7 +12,8 @@ const { Schema } = require('mongoose');
 
 const receiveVitalSignAlert = async (req, res) => {
     try {
-        const { adultoMayorId, tipoSigno, valor } = req.body;
+        //gravedad de ser uno de los siguientes 3: BAJA, MEDIA, CRITICA
+        const { adultoMayorId, tipoSigno, valor, gravedad } = req.body;
 
         if (!adultoMayorId || !tipoSigno || valor === undefined) {
             return res.status(400).json({ message: 'Faltan campos obligatorios.' });
@@ -34,22 +35,19 @@ const receiveVitalSignAlert = async (req, res) => {
             case 'presion': nombreSigno = "Presión Arterial"; unidad = "mmHg"; break;
             case 'temperatura': nombreSigno = "Temperatura"; unidad = "°C"; break;
         }
-        const mensajeAlerta = `Alerta crítica: el valor de su ${nombreSigno} es: ${valor} ${unidad}`;
-        const alertasCreadas = await Promise.all(adultoMayor.encargados.map(async (encargado) => {
-            const newAlert = new Alert({
-                adultoMayorId: new ObjectId(adultoMayorId),
-                familiarId: encargado._id, // Asignamos esta copia al ID de este encargado
+        const mensajeAlerta = `Alerta de signo vital: el valor de su ${nombreSigno} es: ${valor} ${unidad}`;
+        const newAlert = new Alert({
+                adultoMayorId: adultoMayorId,
                 tipoAlerta: 'SIGNO_CRITICO',
                 mensaje: mensajeAlerta,
-                gravedad: 'CRITICA',
+                gravedad: gravedad,
                 estado: 'PENDIENTE'
             });
-            return await newAlert.save();
-        }));
+        await newAlert.save();
 
         res.status(201).json({ 
-            message: `Alerta enviada exitosamente a ${alertasCreadas.length} encargados.`, 
-            alerts: alertasCreadas 
+            message: `Alerta enviada exitosamente`, 
+            alerta: newAlert
         });
 
     } catch (error) {
@@ -60,8 +58,7 @@ const receiveVitalSignAlert = async (req, res) => {
 
 const receiveMedicationAlert = async (req, res) => {
     try {
-        const { adultoMayorId, detalleMedicamento } = req.body;
-
+        const { adultoMayorId, detalleMedicamento, gravedad  } = req.body;
         if (!adultoMayorId || !detalleMedicamento) {
             return res.status(400).json({ message: 'Faltan campos obligatorios.' });
         }
@@ -71,21 +68,20 @@ const receiveMedicationAlert = async (req, res) => {
         if (!adultoMayor || !adultoMayor.encargados || adultoMayor.encargados.length === 0) {
             return res.status(400).json({ message: 'El adulto mayor no tiene encargados asignados.' });
         }
-        const alertasCreadas = await Promise.all(adultoMayor.encargados.map(async (encargado) => {
+        
             const newAlert = new Alert({
-                adultoMayorId: new ObjectId(adultoMayorId),
-                familiarId: encargado._id,
+                adultoMayorId:adultoMayorId,
                 tipoAlerta: 'MEDICACION_OLVIDADA',
                 mensaje: `ALERTA de Medicación Olvidada: ${detalleMedicamento}`,
-                gravedad: 'MEDIA',
+                gravedad: gravedad,
                 estado: 'PENDIENTE'
             });
-            return await newAlert.save();
-        }));
+            await newAlert.save();
+      
         
         res.status(201).json({ 
-            message: `Alerta de medicación enviada a ${alertasCreadas.length} encargados.`, 
-            alerts: alertasCreadas 
+            message: `Alerta Enviada exitosamente`, 
+            alerts: newAlert 
         });
 
     } catch (error) {
@@ -96,15 +92,13 @@ const receiveMedicationAlert = async (req, res) => {
 
 const getPendingAlerts = async (req, res) => {
     try {
-        const { idFamiliar } = req.params;
-        const familiarObjectId = new mongoose.Types.ObjectId(idFamiliar); 
+        const { id } = req.params;
+        const familiarObjectId = new mongoose.Types.ObjectId(id); 
 
         const alerts = await Alert.find({ 
-            familiarId: familiarObjectId,
+            adultoMayorId: id,
             estado: 'PENDIENTE' 
-        })
-        .populate('adultoMayorId', 'nombre apellido num_telefono')
-        .sort({ fechaHora: -1 });
+        }).sort({ fechaHora: -1 });
 
         res.status(200).json(alerts);
     } catch (error) {
