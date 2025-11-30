@@ -10,6 +10,9 @@ const {
     login,
     logout,
     passwordRecovery,
+    asignarFamiliarAAdultoMayor,
+  getEncargadosDeAdultoMayor,
+  getAdultosMayoresDeFamiliar
 } = require('../controllers/users.controller');
 
 router.route('/').get(getUsers)
@@ -22,5 +25,8 @@ router.post("/logout", logout);
 router.route('/:id').get(getUserById).delete(deleteUserAccount);
 router.post("/recoverPassword", passwordRecovery);
 router.get('/test', template);
+router.post('/asignar-familiar', asignarFamiliarAAdultoMayor);
+router.get('/:id/encargados', getEncargadosDeAdultoMayor);
+router.get('/:id/adultos-mayores', getAdultosMayoresDeFamiliar);
 
 module.exports = router;

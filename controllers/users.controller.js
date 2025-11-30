@@ -164,6 +164,138 @@ const passwordRecovery = async (req, res) =>{
     }
 }
 
+const asignarFamiliarAAdultoMayor = async (req, res) => {
+    try {
+        const { adultoMayorId, familiarId } = req.body;
+
+        if (!adultoMayorId || !familiarId) {
+            return res.status(400).json({
+                message: 'Debe enviar adultoMayorId y familiarId.'
+            });
+        }
+
+        if (adultoMayorId === familiarId) {
+            return res.status(400).json({
+                message: 'Un usuario no puede asignarse a sí mismo.'
+            });
+        }
+
+        const adultoMayor = await User.findById(adultoMayorId);
+        const familiar = await User.findById(familiarId);
+
+        if (!adultoMayor || !familiar) {
+            return res.status(404).json({ message: 'Usuario no encontrado.' });
+        }
+
+        if (adultoMayor.tipoUsuario !== 'ADULTO_MAYOR') {
+            return res.status(400).json({
+                message: 'adultoMayorId debe pertenecer a un usuario de tipo ADULTO_MAYOR.'
+            });
+        }
+
+        if (familiar.tipoUsuario !== 'FAMILIAR') {
+            return res.status(400).json({
+                message: 'familiarId debe pertenecer a un usuario de tipo FAMILIAR.'
+            });
+        }
+
+        const yaExiste = adultoMayor.encargados.some(
+            (id) => id.toString() === familiarId
+        );
+
+        if (!yaExiste) {
+            adultoMayor.encargados.push(familiarId); 
+            await adultoMayor.save();
+        }
+
+        return res.status(200).json({
+            message: 'Familiar asignado al adulto mayor correctamente.',
+            adultoMayorId,
+            familiarId
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            message: 'Error al asignar familiar al adulto mayor.',
+            details: error.message
+        });
+    }
+};
+
+const getEncargadosDeAdultoMayor = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const adultoMayor = await User.findById(id)
+            .populate('encargados', 'nombre apellido correo num_telefono edad tipoUsuario');
+
+        if (!adultoMayor) {
+            return res.status(404).json({ message: 'Usuario no encontrado.' });
+        }
+
+        if (adultoMayor.tipoUsuario !== 'ADULTO_MAYOR') {
+            return res.status(400).json({
+                message: 'El usuario no es de tipo ADULTO_MAYOR.'
+            });
+        }
+
+        return res.status(200).json({
+            encargadoDe: {
+                _id: adultoMayor._id,
+                nombre: adultoMayor.nombre,
+                apellido: adultoMayor.apellido,
+                tipoUsuario: adultoMayor.tipoUsuario
+            },
+            encargados: adultoMayor.encargados
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            message: 'Error al obtener encargados del adulto mayor.',
+            details: error.message
+        });
+    }
+};
+
+const getAdultosMayoresDeFamiliar = async (req, res) => {
+    try {
+        const { id } = req.params; 
+
+        const familiar = await User.findById(id);
+
+        if (!familiar) {
+            return res.status(404).json({ message: 'Usuario no encontrado.' });
+        }
+
+        if (familiar.tipoUsuario !== 'FAMILIAR') {
+            return res.status(400).json({
+                message: 'El usuario no es de tipo FAMILIAR.'
+            });
+        }
+
+        const adultosMayores = await User.find({
+            tipoUsuario: 'ADULTO_MAYOR',
+            encargados: familiar._id
+        }).select('nombre apellido correo num_telefono edad tipoUsuario');
+
+        return res.status(200).json({
+            familiar: {
+                _id: familiar._id,
+                nombre: familiar.nombre,
+                apellido: familiar.apellido
+            },
+            adultosMayores
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            message: 'Error al obtener adultos mayores del familiar.',
+            details: error.message
+        });
+    }
+};
+
+
 module.exports = { 
     template,
     login,
@@ -173,5 +305,8 @@ module.exports = {
     getUserById,
     updateUser,
     deleteUserAccount,
-    passwordRecovery
+    passwordRecovery,
+    asignarFamiliarAAdultoMayor,
+    getEncargadosDeAdultoMayor,
+    getAdultosMayoresDeFamiliar
 };
