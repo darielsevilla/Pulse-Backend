@@ -8,10 +8,10 @@ const {
     markAlertAsResolved,
     getAlertsByElder
 } = require('../controllers/alerts.controller');
+
 router.post('/receive/vitalsign', receiveVitalSignAlert); 
 router.post('/receive/medication', receiveMedicationAlert); 
-
-router.get('/pending/:idFamiliar', getPendingAlerts); 
+router.get('/pending/:id', getPendingAlerts); 
 router.get('/elder/:idElder', getAlertsByElder);      
 router.put('/notified/:idAlert', markAlertAsNotified); 
 router.put('/resolved/:idAlert', markAlertAsResolved); 
