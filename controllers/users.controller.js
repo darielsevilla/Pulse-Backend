@@ -225,11 +225,12 @@ const asignarFamiliarAAdultoMayor = async (req, res) => {
 const getEncargadosDeAdultoMayor = async (req, res) => {
     try {
         const { id } = req.params;
+        const db = await databaseConnect();
 
-        const adultoMayor = await User.findById(id)
-            .populate('encargados', 'nombre apellido correo num_telefono edad tipoUsuario');
-
+        const adultoMayor = await User.findById(id);
+        console.log(adultoMayor);
         if (!adultoMayor) {
+            
             return res.status(404).json({ message: 'Usuario no encontrado.' });
         }
 
@@ -238,7 +239,12 @@ const getEncargadosDeAdultoMayor = async (req, res) => {
                 message: 'El usuario no es de tipo ADULTO_MAYOR.'
             });
         }
-
+        const result = await db.collection('Familiares').find(
+                { id_usuario: id },
+                { projection: { _id: 0, id_familiar: 1 } }
+            ).toArray();
+        
+            
         return res.status(200).json({
             encargadoDe: {
                 _id: adultoMayor._id,
@@ -246,7 +252,7 @@ const getEncargadosDeAdultoMayor = async (req, res) => {
                 apellido: adultoMayor.apellido,
                 tipoUsuario: adultoMayor.tipoUsuario
             },
-            encargados: adultoMayor.encargados
+            encargados: result
         });
     } catch (error) {
         console.error(error);
