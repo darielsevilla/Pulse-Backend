@@ -8,10 +8,8 @@ const {
     listarMedicamentos,
     listarMedicamentosActivos,
     terminarMedicamento,
-    agregarRecordatorio,
-    modificarRecordatorio,
-    buscarRecordatorioPorMedicamento,
-    eliminarRecordatorio
+    getMedsByDateForFamiliar,
+    getMedsForTodayForFamiliar
 } = require('../controllers/meds.controller');
 
 router.post("/registerMed", createMed);
@@ -20,9 +18,7 @@ router.delete("/deleteMed", deleteMed);
 router.get("/listarMedicamentos/:id", listarMedicamentos);
 router.get("/listarMedicamentosActivos/:id", listarMedicamentosActivos);
 router.post("/terminarMedicamento/:id", terminarMedicamento);
+router.get("/meds/by-date-familiar/:idFamiliar", getMedsByDateForFamiliar);
+router.get("/meds/for-today-familiar/:idFamiliar", getMedsForTodayForFamiliar);
 
-router.post("/agregarRecordatorio", agregarRecordatorio);
-router.post("/modificarRecordatorio", modificarRecordatorio);
-router.get("/buscarRecordatorioPorMedicamento/:id", buscarRecordatorioPorMedicamento);
-router.delete("/eliminarRecordatorio", eliminarRecordatorio);
 module.exports = router;
