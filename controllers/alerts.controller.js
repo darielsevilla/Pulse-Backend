@@ -164,11 +164,57 @@ const markAlertAsResolved = async (req, res) => {
     }
 };
 
+const getAlertById = async (req, res) => {
+    try {
+        const { idAlert } = req.params;
+
+        const alert = await Alert.findById(idAlert);
+
+        if (!alert) {
+            return res.status(404).json({ message: 'Alerta no encontrada.' });
+        }
+
+        res.status(200).json(alert);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ 
+            message: 'Error al obtener alerta.', 
+            details: error.message 
+        });
+    }
+};
+
+const deleteAlert = async (req, res) => {
+    try {
+        const { idAlert } = req.params;
+
+        const deletedAlert = await Alert.findByIdAndDelete(idAlert);
+
+        if (!deletedAlert) {
+            return res.status(404).json({ message: 'Alerta no encontrada para eliminar.' });
+        }
+
+        res.status(200).json({ 
+            message: 'Alerta eliminada correctamente.', 
+            alert: deletedAlert 
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ 
+            message: 'Error al eliminar alerta.', 
+            details: error.message 
+        });
+    }
+};
+
+
 module.exports = {
     receiveVitalSignAlert,
     receiveMedicationAlert,
     getPendingAlerts,
     getAlertsByElder,
     markAlertAsNotified,
-    markAlertAsResolved
+    markAlertAsResolved,
+    getAlertById,
+    deleteAlert
 };

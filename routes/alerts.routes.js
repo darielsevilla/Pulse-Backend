@@ -6,7 +6,9 @@ const {
     getPendingAlerts, 
     markAlertAsNotified,
     markAlertAsResolved,
-    getAlertsByElder
+    getAlertsByElder,
+    getAlertById,
+    deleteAlert
 } = require('../controllers/alerts.controller');
 
 router.post('/receive/vitalsign', receiveVitalSignAlert); 
@@ -15,5 +17,7 @@ router.get('/pending/:id', getPendingAlerts);
 router.get('/elder/:idElder', getAlertsByElder);      
 router.put('/notified/:idAlert', markAlertAsNotified); 
 router.put('/resolved/:idAlert', markAlertAsResolved); 
+router.get('/:idAlert', getAlertById);
+router.delete('/:idAlert', deleteAlert);
 
 module.exports = router;

@@ -184,7 +184,6 @@ const terminarMedicamento = async (req, res) => {
         { returnDocument: 'after' }
       );
 
-      let resultBorrar = await db.collection("Medicamentos_tomados").findOneAndDelete({ id_medicamento: _id });
       res.status(200).json({
         medicamentos: result,
       });
@@ -200,147 +199,99 @@ const terminarMedicamento = async (req, res) => {
       details: error.message,
     });
   }
+};
+
+function getDayNameFromDate(date) {
+  const dias = [
+    "DOMINGO",
+    "LUNES",
+    "MARTES",
+    "MIERCOLES",
+    "JUEVES",
+    "VIERNES",
+    "SABADO",
+  ];
+  const idx = date.getDay();
+  return dias[idx];
 }
-//recordatorios
-const agregarRecordatorio = async (req, res) => {
-  try {
-    const db = await databaseConnect();
-    const { med_id, fecha } = req.body;
 
-    if (!med_id || !fecha) {
-      return res.status(400).json({ message: "No se mandó med_id o fecha" });
+
+const getMedsByDateForFamiliar = async (req, res) => {
+  try {
+    const { idFamiliar } = req.params;
+    const { date } = req.query;
+
+    if (!idFamiliar) {
+      return res
+        .status(400)
+        .json({ message: "idFamiliar es obligatorio." });
     }
 
-    let recordatorio = await db.collection("Medicamentos_tomados").insertOne({
-      id_medicamento: med_id,
-      tomado: false,
-      proximo_recordatorio: new Date(fecha),
-      recordatorio_anterior: null,
-      notificacion: false
-    });
-
-    return res.status(200).json({
-      message: "Recordatorio creado exitosamente",
-      recordatorio: recordatorio
-    });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      message: "Error creando recordatorio",
-      details: error.message
-    });
-  }
-};
-
-const modificarRecordatorio = async (req, res) => {
-  try {
-    const db = await databaseConnect();
-    const { _id, proximo_recordatorio, recordatorio_anterior, tomado, notificacion } = req.body;
-
-    if (!_id) {
-      res.status(400).json({ message: "No se mandó _id del recordatorio" });
+    let targetDate;
+    if (date) {
+      targetDate = new Date(date + "T00:00:00");
+      if (isNaN(targetDate.getTime())) {
+        return res
+          .status(400)
+          .json({ message: "Formato de fecha inválido." });
+      }
     } else {
-      const update = {};
-
-      if (proximo_recordatorio) {
-        update.proximo_recordatorio = new Date(proximo_recordatorio);
-      }
-      if (recordatorio_anterior) {
-        update.recordatorio_anterior = new Date(recordatorio_anterior);
-      }
-      if (tomado) {
-        update.tomado = tomado;
-      }
-      if (notificacion) {
-        update.notificacion = notificacion;
-      }
-
-      if (Object.keys(update).length === 0) {
-        return res.status(400).json({ message: "No se mandaron campos para actualizar" });
-      }
-
-      const result = await db.collection("Medicamentos_tomados").findOneAndUpdate(
-        { _id: new ObjectId(_id) },
-        { $set: update },
-        { returnDocument: "after" }
-      );
-
-      if (!result) {
-        res.status(404).json({ message: "Recordatorio no encontrado" });
-      } else {
-        res.status(200).json({
-          message: "Recordatorio modificado exitosamente",
-          recordatorio: result,
-        });
-      }
-
-
+      targetDate = new Date();
     }
 
-
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      message: "Error modificando recordatorio",
-      details: error.message,
-    });
-  }
-};
-
-const buscarRecordatorioPorMedicamento = async (req, res) => {
-  try {
-    const med_id = req.params.id;
-    if (!med_id) {
-      return res.status(400).json({ message: "No se mandó med_id" });
-    }
+    const diaSemana = getDayNameFromDate(targetDate);
 
     const db = await databaseConnect();
+    const familiaresCol = db.collection("Familiares");
+    const medsCol = db.collection("Medicamentos");
 
-    const recordatorios = await db.collection("Medicamentos_tomados").find({ id_medicamento: med_id }).toArray();
+    const relaciones = await familiaresCol
+      .find({ id_familiar: idFamiliar })
+      .toArray();
 
-    res.status(200).json({
-      recordatorios,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      message: "Error obteniendo recordatorios",
-      details: error.message,
-    });
-  }
-};
+    const idsAdultos = relaciones.map((rel) => rel.id_usuario);
 
-const eliminarRecordatorio = async (req, res) => {
-  try {
-    const { _id } = req.body;
-
-    if (!_id) {
-      res.status(400).json({ message: "No se mandó id del recordatorio" });
-    } else {
-      const db = await databaseConnect();
-
-      const result = await db.collection("Medicamentos_tomados").findOneAndDelete({ _id: new ObjectId(_id) });
-
-      if (!result) {
-        res.status(404).json({ message: "Recordatorio no encontrado" });
-      }
-
-      res.status(200).json({
-        message: "Recordatorio eliminado exitosamente",
-        recordatorio: result,
-      });
+    if (idsAdultos.length === 0) {
+      return res.status(200).json([]);
     }
 
+    const filtro = {
+      id_usuario: { $in: idsAdultos },
+      diasSemana: { $in: [diaSemana] },
+    };
 
+    filtro.$and = [
+      {
+        $or: [
+          { fecha_inicio: { $lte: targetDate } },
+          { fecha_inicio: { $exists: false } },
+        ],
+      },
+      {
+        $or: [
+          { fecha_fin: { $gte: targetDate } },
+          { fecha_fin: { $exists: false } },
+        ],
+      },
+    ];
+
+    
+    const meds = await medsCol.find(filtro).toArray();
+
+    return res.status(200).json(meds);
   } catch (error) {
     console.error(error);
     return res.status(500).json({
-      message: "Error eliminando recordatorio",
+      message: "Error al obtener medicamentos por fecha para familiar.",
       details: error.message,
     });
   }
 };
 
+const getMedsForTodayForFamiliar = async (req, res) => {
+  req.query.date = undefined;
+  return getMedsByDateForFamiliar(req, res);
+};
 
 module.exports = {
   createMed,
@@ -349,9 +300,7 @@ module.exports = {
   listarMedicamentos,
   listarMedicamentosActivos,
   terminarMedicamento,
-  agregarRecordatorio,
-  modificarRecordatorio,
-  buscarRecordatorioPorMedicamento,
-  eliminarRecordatorio
+  getMedsByDateForFamiliar,
+  getMedsForTodayForFamiliar
 };
 
