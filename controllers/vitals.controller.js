@@ -2,103 +2,123 @@
 
 const { databaseConnect } = require("../database");
 const User = require("../models/User.model");
+const { ObjectId } = require("mongodb");
 
-const receiveVitalSign = async (req, res) => {
+
+const createVitalsRecord = async (req, res) => {
   try {
-    const { id_usuario, tipoSigno, valor, unidad, origen } = req.body;
+    const { adultoMayorId, bpm, presion, temperatura } = req.body;
 
-    // Validaciones básicas
-    if (!id_usuario || !tipoSigno || valor === undefined) {
+    if (!adultoMayorId) {
+      return res
+        .status(400)
+        .json({ message: "adultoMayorId es obligatorio." });
+    }
+
+    const noHayBpm = bpm === undefined || bpm === null || bpm === "";
+    const noHayPresion =
+      presion === undefined || presion === null || presion === "";
+    const noHayTemp =
+      temperatura === undefined || temperatura === null || temperatura === "";
+
+    if (noHayBpm && noHayPresion && noHayTemp) {
       return res.status(400).json({
-        message: "Faltan campos obligatorios: id_usuario, tipoSigno o valor.",
+        message:
+          "Debe enviar al menos un signo vital (bpm, presion o temperatura).",
       });
     }
 
-    const usuario = await User.findById(id_usuario);
+    const usuario = await User.findById(adultoMayorId);
     if (!usuario) {
-      return res.status(404).json({ message: "Usuario no encontrado." });
-    }
-
-    if (usuario.tipoUsuario !== "ADULTO_MAYOR") {
-      return res.status(400).json({
-        message: "Solo se pueden registrar signos vitales de usuarios ADULTO_MAYOR.",
-      });
+      return res.status(404).json({ message: "Adulto mayor no encontrado." });
     }
 
     const db = await databaseConnect();
     const signosCol = db.collection("SignosVitales");
 
-    const ahora = new Date();
+    const now = new Date();
 
     const doc = {
-      id_usuario,
-      tipoSigno,           
-      valor,               
-      unidad: unidad || "",
-      origen: origen || "DISPOSITIVO_IOT",
-      fechaHora: ahora.toISOString(),
+      adultoMayorId: new ObjectId(adultoMayorId),
+      bpm: noHayBpm ? null : bpm,
+      presion: noHayPresion ? null : presion,
+      temperatura: noHayTemp ? null : temperatura,
+      fechaHora: now,
     };
 
     const result = await signosCol.insertOne(doc);
 
     return res.status(201).json({
-      message: "Signo vital registrado correctamente.",
+      message: "Signos vitales registrados correctamente.",
       id_registro: result.insertedId,
       data: doc,
     });
   } catch (error) {
     console.error(error);
     return res.status(500).json({
-      message: "Error al registrar signo vital.",
+      message: "Error al registrar signos vitales.",
       details: error.message,
     });
   }
 };
 
+
 const getLastVitals = async (req, res) => {
   try {
-    const { id_usuario } = req.params;
-    const { tipoSigno } = req.query;
-
-    const usuario = await User.findById(id_usuario);
-    if (!usuario) {
-      return res.status(404).json({ message: "Usuario no encontrado." });
-    }
+    const { adultoMayorId } = req.params;
 
     const db = await databaseConnect();
     const signosCol = db.collection("SignosVitales");
 
-    const filtro = { id_usuario };
-    if (tipoSigno) {
-      filtro.tipoSigno = tipoSigno;
-    }
-
-    const registros = await signosCol
-      .find(filtro)
-      .sort({ fechaHora: -1 }) 
-      .limit(20)
+    const last = await signosCol
+      .find({ adultoMayorId: new ObjectId(adultoMayorId) })
+      .sort({ fechaHora: -1 })
+      .limit(1)
       .toArray();
 
-    return res.status(200).json({
-      usuario: {
-        _id: usuario._id,
-        nombre: usuario.nombre,
-        apellido: usuario.apellido,
-        tipoUsuario: usuario.tipoUsuario,
-      },
-      tipoSigno: tipoSigno || "TODOS",
-      registros,
-    });
+    if (last.length === 0) {
+      return res.status(200).json({
+        message: "No hay signos vitales registrados para este usuario.",
+        data: null,
+      });
+    }
+
+    return res.status(200).json(last[0]);
   } catch (error) {
     console.error(error);
     return res.status(500).json({
-      message: "Error al obtener signos vitales.",
+      message: "Error al obtener últimos signos vitales.",
+      details: error.message,
+    });
+  }
+};
+
+
+const getVitalsHistory = async (req, res) => {
+  try {
+    const { adultoMayorId } = req.params;
+
+    const db = await databaseConnect();
+    const signosCol = db.collection("SignosVitales");
+
+    const registros = await signosCol
+      .find({ adultoMayorId: new ObjectId(adultoMayorId) })
+      .sort({ fechaHora: -1 })
+      .limit(50)
+      .toArray();
+
+    return res.status(200).json(registros);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Error al obtener historial de signos vitales.",
       details: error.message,
     });
   }
 };
 
 module.exports = {
-  receiveVitalSign,
+  createVitalsRecord,
   getLastVitals,
+  getVitalsHistory,
 };

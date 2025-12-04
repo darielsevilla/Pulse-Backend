@@ -2,12 +2,15 @@ const express = require("express");
 const router = express.Router();
 
 const {
-  receiveVitalSign,
+  createVitalsRecord,
   getLastVitals,
+  getVitalsHistory,
 } = require("../controllers/vitals.controller");
 
-router.post("/receive", receiveVitalSign);
+router.post("/", createVitalsRecord);
 
-router.get("/last/:id_usuario", getLastVitals);
+router.get("/last/:adultoMayorId", getLastVitals);
+
+router.get("/history/:adultoMayorId", getVitalsHistory);
 
 module.exports = router;
