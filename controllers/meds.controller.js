@@ -216,30 +216,32 @@ function getDayNameFromDate(date) {
 }
 
 
+//prueba de push
 const getMedsByDateForFamiliar = async (req, res) => {
   try {
     const { idFamiliar } = req.params;
     const { date } = req.query;
 
     if (!idFamiliar) {
-      return res
-        .status(400)
-        .json({ message: "idFamiliar es obligatorio." });
+      return res.status(400).json({ message: "idFamiliar es obligatorio." });
     }
 
-    let targetDate;
+    let targetDateStr;
     if (date) {
-      targetDate = new Date(date + "T00:00:00");
-      if (isNaN(targetDate.getTime())) {
+      const parts = date.split("-");
+      if (parts.length !== 3) {
         return res
           .status(400)
-          .json({ message: "Formato de fecha inválido." });
+          .json({ message: "Formato de fecha inválido. Use YYYY-MM-DD." });
       }
+      const [y, m, d] = parts;
+      targetDateStr = `${y.padStart(4, "0")}-${m.padStart(2, "0")}-${d.padStart(
+        2,
+        "0"
+      )}`;
     } else {
-      targetDate = new Date();
+      targetDateStr = new Date().toISOString().slice(0, 10);
     }
-
-    const diaSemana = getDayNameFromDate(targetDate);
 
     const db = await databaseConnect();
     const familiaresCol = db.collection("Familiares");
@@ -255,30 +257,25 @@ const getMedsByDateForFamiliar = async (req, res) => {
       return res.status(200).json([]);
     }
 
-    const filtro = {
-      id_usuario: { $in: idsAdultos },
-      diasSemana: { $in: [diaSemana] },
-    };
+    const meds = await medsCol
+      .find({ id_usuario: { $in: idsAdultos } })
+      .toArray();
 
-    filtro.$and = [
-      {
-        $or: [
-          { fecha_inicio: { $lte: targetDate } },
-          { fecha_inicio: { $exists: false } },
-        ],
-      },
-      {
-        $or: [
-          { fecha_fin: { $gte: targetDate } },
-          { fecha_fin: { $exists: false } },
-        ],
-      },
-    ];
+    const filtrados = meds.filter((med) => {
+      if (!med.fecha_inicio || !med.fecha_fin) return false;
 
-    
-    const meds = await medsCol.find(filtro).toArray();
+      const inicio = new Date(med.fecha_inicio);
+      const fin = new Date(med.fecha_fin);
 
-    return res.status(200).json(meds);
+      if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) return false;
+
+      const inicioStr = inicio.toISOString().slice(0, 10);
+      const finStr = fin.toISOString().slice(0, 10);
+
+      return inicioStr <= targetDateStr && finStr >= targetDateStr;
+    });
+
+    return res.status(200).json(filtrados);
   } catch (error) {
     console.error(error);
     return res.status(500).json({
@@ -288,10 +285,15 @@ const getMedsByDateForFamiliar = async (req, res) => {
   }
 };
 
+
+
+
 const getMedsForTodayForFamiliar = async (req, res) => {
-  req.query.date = undefined;
+  const todayStr = new Date().toISOString().slice(0, 10);
+  req.query.date = todayStr;
   return getMedsByDateForFamiliar(req, res);
 };
+
 
 const getMedsByFamiliar = async (req, res) => {
   try {
@@ -338,31 +340,43 @@ const getMedsByDate = async (req, res) => {
       return res.status(400).json({ message: "idUsuario es obligatorio." });
     }
 
-    let targetDate;
+    let targetDateStr;
     if (date) {
-      targetDate = new Date(date + "T00:00:00");
-      if (isNaN(targetDate.getTime())) {
+      const parts = date.split("-");
+      if (parts.length !== 3) {
         return res
           .status(400)
           .json({ message: "Formato de fecha inválido. Use YYYY-MM-DD." });
       }
+      const [y, m, d] = parts;
+      targetDateStr = `${y.padStart(4, "0")}-${m.padStart(2, "0")}-${d.padStart(
+        2,
+        "0"
+      )}`;
     } else {
-      targetDate = new Date();
+      targetDateStr = new Date().toISOString().slice(0, 10);
     }
-
-    const diaSemana = getDayNameFromDate(targetDate);
 
     const db = await databaseConnect();
     const medsCol = db.collection("Medicamentos");
 
-    const filtro = {
-      id_usuario: idUsuario,          
-      diasSemana: { $in: [diaSemana] }
-    };
+    const meds = await medsCol.find({ id_usuario: idUsuario }).toArray();
 
-    const meds = await medsCol.find(filtro).toArray();
+    const filtrados = meds.filter((med) => {
+      if (!med.fecha_inicio || !med.fecha_fin) return false;
 
-    return res.status(200).json(meds);
+      const inicio = new Date(med.fecha_inicio);
+      const fin = new Date(med.fecha_fin);
+
+      if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) return false;
+
+      const inicioStr = inicio.toISOString().slice(0, 10);
+      const finStr = fin.toISOString().slice(0, 10);
+
+      return inicioStr <= targetDateStr && finStr >= targetDateStr;
+    });
+
+    return res.status(200).json(filtrados);
   } catch (error) {
     console.error(error);
     return res.status(500).json({
@@ -371,6 +385,7 @@ const getMedsByDate = async (req, res) => {
     });
   }
 };
+
 
 
 
