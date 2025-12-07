@@ -118,33 +118,27 @@ const getVitalsHistory = async (req, res) => {
 };
 
 
+
 const simulateVitals = async (req, res) => {
   try {
-    const { adultoMayorId } = req.body;
-
-    if (!adultoMayorId) {
-      return res.status(400).json({
-        message: "adultoMayorId es obligatorio.",
-      });
-    }
-
-    const bpm = 60 + Math.floor(Math.random() * 41); 
+    const bpm = 60 + Math.floor(Math.random() * 41);
 
     const sistolica = 100 + Math.floor(Math.random() * 41); 
     const diastolica = 60 + Math.floor(Math.random() * 31); 
     const presion = `${sistolica}/${diastolica}`;
 
-    const temperatura = Number((36 + Math.random() * 1.9).toFixed(1)); 
+    const temperatura = Number((36 + Math.random() * 1.9).toFixed(1));
 
     const now = new Date();
 
     return res.status(200).json({
-      adultoMayorId,
+      adultoMayorId: null,
       bpm,
       presion,
       temperatura,
       fechaHora: now.toISOString(),
     });
+
   } catch (error) {
     console.error(error);
     return res.status(500).json({
@@ -153,6 +147,7 @@ const simulateVitals = async (req, res) => {
     });
   }
 };
+
 
 
 module.exports = {
