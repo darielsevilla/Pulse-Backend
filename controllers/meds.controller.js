@@ -329,6 +329,51 @@ const getMedsByFamiliar = async (req, res) => {
 };
 
 
+const getMedsByDate = async (req, res) => {
+  try {
+    const { idUsuario } = req.params;
+    const { date } = req.query;
+
+    if (!idUsuario) {
+      return res.status(400).json({ message: "idUsuario es obligatorio." });
+    }
+
+    let targetDate;
+    if (date) {
+      targetDate = new Date(date + "T00:00:00");
+      if (isNaN(targetDate.getTime())) {
+        return res
+          .status(400)
+          .json({ message: "Formato de fecha inválido. Use YYYY-MM-DD." });
+      }
+    } else {
+      targetDate = new Date();
+    }
+
+    const diaSemana = getDayNameFromDate(targetDate);
+
+    const db = await databaseConnect();
+    const medsCol = db.collection("Medicamentos");
+
+    const filtro = {
+      id_usuario: idUsuario,          
+      diasSemana: { $in: [diaSemana] }
+    };
+
+    const meds = await medsCol.find(filtro).toArray();
+
+    return res.status(200).json(meds);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Error al obtener medicamentos por fecha.",
+      details: error.message,
+    });
+  }
+};
+
+
+
 module.exports = {
   createMed,
   modifyMed,
@@ -338,6 +383,7 @@ module.exports = {
   terminarMedicamento,
   getMedsByDateForFamiliar,
   getMedsForTodayForFamiliar,
-  getMedsByFamiliar
+  getMedsByFamiliar,
+  getMedsByDate
 };
 

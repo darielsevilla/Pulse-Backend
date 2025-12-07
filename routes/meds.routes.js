@@ -10,7 +10,8 @@ const {
     terminarMedicamento,
     getMedsByDateForFamiliar,
     getMedsForTodayForFamiliar,
-    getMedsByFamiliar
+    getMedsByFamiliar,
+    getMedsByDate
 } = require('../controllers/meds.controller');
 
 router.post("/registerMed", createMed);
@@ -22,6 +23,6 @@ router.post("/terminarMedicamento/:id", terminarMedicamento);
 router.get("/by-date-familiar/:idFamiliar", getMedsByDateForFamiliar);
 router.get("/for-today-familiar/:idFamiliar", getMedsForTodayForFamiliar);
 router.get("/by-familiar/:idFamiliar", getMedsByFamiliar);
-
+router.get("/by-date/:idUsuario", getMedsByDate);
 
 module.exports = router;
