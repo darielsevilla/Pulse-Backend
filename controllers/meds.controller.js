@@ -293,6 +293,42 @@ const getMedsForTodayForFamiliar = async (req, res) => {
   return getMedsByDateForFamiliar(req, res);
 };
 
+const getMedsByFamiliar = async (req, res) => {
+  try {
+    const { idFamiliar } = req.params;
+    if (!idFamiliar) {
+      return res.status(400).json({ message: "idFamiliar es obligatorio." });
+    }
+
+    const db = await databaseConnect();
+    const familiaresCol = db.collection("Familiares");
+    const medsCol = db.collection("Medicamentos");
+
+    const relaciones = await familiaresCol
+      .find({ id_familiar: idFamiliar })
+      .toArray();
+
+    const idsAdultos = relaciones.map(rel => rel.id_usuario);
+
+    if (idsAdultos.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    const medicamentos = await medsCol
+      .find({ id_usuario: { $in: idsAdultos } })
+      .toArray();
+
+    return res.status(200).json(medicamentos);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Error al obtener medicamentos por familiar.",
+      details: error.message,
+    });
+  }
+};
+
+
 module.exports = {
   createMed,
   modifyMed,
@@ -301,6 +337,7 @@ module.exports = {
   listarMedicamentosActivos,
   terminarMedicamento,
   getMedsByDateForFamiliar,
-  getMedsForTodayForFamiliar
+  getMedsForTodayForFamiliar,
+  getMedsByFamiliar
 };
 
