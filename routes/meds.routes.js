@@ -18,7 +18,7 @@ router.delete("/deleteMed", deleteMed);
 router.get("/listarMedicamentos/:id", listarMedicamentos);
 router.get("/listarMedicamentosActivos/:id", listarMedicamentosActivos);
 router.post("/terminarMedicamento/:id", terminarMedicamento);
-router.get("/meds/by-date-familiar/:idFamiliar", getMedsByDateForFamiliar);
-router.get("/meds/for-today-familiar/:idFamiliar", getMedsForTodayForFamiliar);
+router.get("/by-date-familiar/:idFamiliar", getMedsByDateForFamiliar);
+router.get("/for-today-familiar/:idFamiliar", getMedsForTodayForFamiliar);
 
 module.exports = router;
