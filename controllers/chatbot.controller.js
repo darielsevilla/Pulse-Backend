@@ -12,8 +12,8 @@ const generateHealthReport = async (req, res) => {
         const bpm = req.body.bpm;
         const temperatura_corporal = req.body.temperatura_corporal; //(grados celcius)
         const presion_arterial = req.body.presion_arterial;
-
-        //mensajes de validación
+        const nombre = req.body.nombre ? req.body.nombre : "";
+        
         if(!bpm){
             return res.status(401).json({
                 message: "* Debe enviar bpm *",
@@ -33,9 +33,10 @@ const generateHealthReport = async (req, res) => {
         }
 
     
-        //prompt
+      
+        console.log("entro");
         //const prompt = "Genera in reporte de salud con la siguiente estructura: bpm:" + bpm + ", temperatura corporal: " + temperatura_corporal + " °C, presion arterial : " + presion_arterial + " . Damelo con la siguiente estructura, en json, de modo que lo pueda parsear de un solo com JSON.stringify(). Por esto mismo, dame solo el json, nada de comentarios ni texto extra. Esta es la estructura a la que te tiens que apegar: { oracion-introduccion : string (una oración); resumen-general: string (una oracion); consejos: string[] (dame 3, especificos a los datos),  conlusion: string (1 parrafo), oracion-final: string (1 oracion, que le pregunte como se siente, en un tono amigable pero cuya implicación de urgencia dependa de los demas datos)}. Escribe todo en un tono amigable y con algo de detalle excepto en los casos donde especificamente se indicó ser breve, como las de 1 oracion. En el resumen general, damelo con datos numericos que validen lo que se dice, y si se puede agrega emojis para que parezca más amigable."
-        const prompt = "Genera in reporte de salud con la siguiente estructura: bpm:" + bpm + ", temperatura corporal: " + temperatura_corporal + " °C, presion arterial : " + presion_arterial + " . Damelo con la siguiente estructura en json, de modo que se pueda parsear de un solo con JSON.stringify(). Por esto mismo, dame solo el json, nada de comentarios no texto extra. La estructura del json debe ser {reporte:string}. La estructura interna de reporte debe ser bien separada para que no parezca un chorizo de texto. Por esto mismo, dame solo el texto. Esta es la estructura a la que te tiends que apegar: oracion de introduccion, resumen-genera (una o 2 oraciones), consejos (dame 3, especificos a los datos separados pur bullet points),  conlusion (1 parrafo), oracion-final (1 oracion, que le pregunte como se siente, en un tono amigable pero cuya implicación de urgencia dependa de los demas datos). Escribe todo en un tono amigable y con algo de detalle excepto en los casos donde especificamente se indicó ser breve, como las de 1 oracion. En el resumen general, damelo con datos numericos que validen lo que se dice, y si se puede agrega emojis para que parezca más amigable."
+        const prompt = "Genera in reporte de salud con la siguiente estructura: bpm:" + bpm + ", temperatura corporal: " + temperatura_corporal + " °C, presion arterial : " + presion_arterial + " . Damelo con la siguiente estructura en json, de modo que se pueda parsear de un solo con JSON.stringify(). Por esto mismo, dame solo el json, nada de comentarios no texto extra. La estructura del json debe ser {reporte:string}. La estructura interna de reporte debe ser bien separada para que no parezca un chorizo de texto. Por esto mismo, dame solo el texto. Esta es la estructura a la que te tiends que apegar: oracion de introduccion, resumen-genera (una o 2 oraciones), consejos (dame 3, especificos a los datos separados pur bullet points),  conlusion (1 parrafo), oracion-final (1 oracion, que le pregunte como se siente, en un tono amigable pero cuya implicación de urgencia dependa de los demas datos). Escribe todo en un tono amigable y con algo de detalle excepto en los casos donde especificamente se indicó ser breve, como las de 1 oracion. En el resumen general, damelo con datos numericos que validen lo que se dice, y si se puede agrega emojis para que parezca más amigable. Si dentro de estos parentesis hay un nombre, haz el reporte referente a esta persona en tercera persona: ("+nombre+")."
         
         //peticion
         const response = await ai.models.generateContent({
@@ -43,9 +44,9 @@ const generateHealthReport = async (req, res) => {
             contents: prompt,
         });
 
-        //console.log(response.text.substring(7, response.text.length - 4) + "\n\n")
-        const json_return = JSON.parse(response.text.substring(7, response.text.length - 4));
         
+        const json_return = JSON.parse(response.text.substring(7, response.text.length - 4));
+        console.log(json_return)
         //resultados
         res.status(200).json({
             message: "Reporte de salud generado",
