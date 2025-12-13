@@ -11,7 +11,7 @@ app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
 
-app.listen(port, () => {
+app.listen(port,  () => {
   console.log(`Backend levantado en http://localhost:${port}`);
   databaseConnect();
 });
