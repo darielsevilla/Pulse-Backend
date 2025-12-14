@@ -12,7 +12,7 @@ const AlertSchema = new mongoose.Schema({
     },
     tipoAlerta: {
         type: String,
-        enum: ['SIGNO_CRITICO', 'MEDICACION_OLVIDADA'],
+        enum: ['SIGNO_CRITICO', 'MEDICACION_OLVIDADA', 'SIGNOS_VITALES'],
         required: [true, 'El tipo de alerta es obligatorio.']
     },
     mensaje: {

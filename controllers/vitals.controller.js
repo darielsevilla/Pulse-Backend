@@ -3,6 +3,77 @@
 const { databaseConnect } = require("../database");
 const User = require("../models/User.model");
 const { ObjectId } = require("mongodb");
+const Alert = require("../models/Alert.model");
+
+function parsePresion(presion) {
+  if (!presion) return null;
+
+  if (typeof presion === "string") {
+    const parts = presion.split("/");
+    if (parts.length !== 2) return null;
+    const s = Number(parts[0]);
+    const d = Number(parts[1]);
+    if (Number.isNaN(s) || Number.isNaN(d)) return null;
+    return { sistolica: s, diastolica: d };
+  }
+
+  if (typeof presion === "object") {
+    const s = Number(presion.sistolica);
+    const d = Number(presion.diastolica);
+    if (Number.isNaN(s) || Number.isNaN(d)) return null;
+    return { sistolica: s, diastolica: d };
+  }
+
+  return null;
+}
+
+function evaluarVitales({ bpm, temperatura, presion }) {
+  const issues = [];
+
+  if (bpm !== null && bpm !== undefined && bpm !== "") {
+    const bpmN = Number(bpm);
+    if (!Number.isNaN(bpmN)) {
+      if (bpmN < 50) issues.push({ tipo: "BPM", estado: "BAJO", gravedad: bpmN < 40 ? "CRITICA" : "MEDIA", valor: bpmN, umbral: "< 50" });
+      if (bpmN > 120) issues.push({ tipo: "BPM", estado: "ALTO", gravedad: bpmN > 140 ? "CRITICA" : "MEDIA", valor: bpmN, umbral: "> 120" });
+    }
+  }
+
+  if (temperatura !== null && temperatura !== undefined && temperatura !== "") {
+    const t = Number(temperatura);
+    if (!Number.isNaN(t)) {
+      if (t < 35.5) issues.push({ tipo: "TEMPERATURA", estado: "BAJA", gravedad: t < 35.0 ? "CRITICA" : "MEDIA", valor: t, umbral: "< 35.5°C" });
+      if (t >= 38.0) issues.push({ tipo: "TEMPERATURA", estado: "ALTA", gravedad: t >= 39.5 ? "CRITICA" : "MEDIA", valor: t, umbral: ">= 38.0°C" });
+    }
+  }
+
+  const p = parsePresion(presion);
+  if (p) {
+    const { sistolica, diastolica } = p;
+
+    if (sistolica < 90 || diastolica < 60) {
+      issues.push({
+        tipo: "PRESION",
+        estado: "BAJA",
+        gravedad: (sistolica < 80 || diastolica < 50) ? "CRITICA" : "MEDIA",
+        valor: `${sistolica}/${diastolica}`,
+        umbral: "< 90/60"
+      });
+    }
+
+    if (sistolica >= 140 || diastolica >= 90) {
+      issues.push({
+        tipo: "PRESION",
+        estado: "ALTA",
+        gravedad: (sistolica >= 180 || diastolica >= 120) ? "CRITICA" : "MEDIA",
+        valor: `${sistolica}/${diastolica}`,
+        umbral: ">= 140/90"
+      });
+    }
+  }
+
+  return issues;
+}
+
 
 
 const createVitalsRecord = async (req, res) => {
@@ -47,6 +118,53 @@ const createVitalsRecord = async (req, res) => {
     };
 
     const result = await signosCol.insertOne(doc);
+
+const issues = evaluarVitales({
+  bpm: doc.bpm,
+  presion: doc.presion,
+  temperatura: doc.temperatura
+});
+
+if (issues.length > 0) {
+  const familiaresCol = db.collection("Familiares");
+
+  const relaciones = await familiaresCol
+    .find({ id_usuario: adultoMayorId })
+    .toArray();
+
+  const familiaresIds = relaciones.map(r => r.id_familiar);
+
+  const mensajes = issues.map(i =>
+    `${i.tipo} ${i.estado}: ${i.valor} (umbral ${i.umbral})`
+  ).join(" | ");
+
+  const gravedadFinal =
+    issues.some(i => i.gravedad === "CRITICA") ? "CRITICA" :
+    issues.some(i => i.gravedad === "MEDIA") ? "MEDIA" : "BAJA";
+
+  await Alert.create({
+    adultoMayorId: new ObjectId(adultoMayorId),
+    tipoAlerta: "SIGNOS_VITALES",
+    mensaje: `Alerta: signos vitales fuera de rango. ${mensajes}`,
+    gravedad: gravedadFinal,
+    estado: "PENDIENTE",
+    fechaHora: now
+  });
+
+  for (const famId of familiaresIds) {
+    await Alert.create({
+      adultoMayorId: new ObjectId(adultoMayorId),
+      tipoAlerta: "SIGNOS_VITALES",
+      mensaje: `Alerta del adulto mayor: signos vitales fuera de rango. ${mensajes}`,
+      gravedad: gravedadFinal,
+      estado: "PENDIENTE",
+      fechaHora: now,
+      familiarId: new ObjectId(famId)
+    });
+  }
+}
+
+
 
     return res.status(201).json({
       message: "Signos vitales registrados correctamente.",
