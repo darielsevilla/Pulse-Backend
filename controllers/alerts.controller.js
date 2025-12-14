@@ -91,22 +91,23 @@ const receiveMedicationAlert = async (req, res) => {
 };
 
 const getPendingAlerts = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const familiarObjectId = new mongoose.Types.ObjectId(id); 
+  try {
+    const { id } = req.params;
 
-        const alerts = await Alert.find({ 
-            adultoMayorId: id,
-            estado: 'PENDIENTE' 
-        }).sort({ fechaHora: -1 });
+    const alerts = await Alert.find({
+      familiarId: new mongoose.Types.ObjectId(id),
+      estado: "PENDIENTE",
+    }).sort({ fechaHora: -1 });
 
-        res.status(200).json(alerts);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Error al obtener alertas pendientes.', details: error.message });
-    }
+    return res.status(200).json(alerts);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Error al obtener alertas pendientes.",
+      details: error.message,
+    });
+  }
 };
-
 const getAlertsByElder = async (req, res) => {
     try {
         const { idElder } = req.params;
